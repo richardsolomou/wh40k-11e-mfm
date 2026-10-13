@@ -86,6 +86,35 @@ describe('changelog (ignores firstSeen)', () => {
     );
   });
 
+  it('reports no changes for identical snapshots with duplicate unit names', () => {
+    const faction: FactionContent = {
+      name: 'Space Wolves',
+      slug: 'space-wolves',
+      version: '1.5',
+      detachments: [],
+      units: [
+        {
+          name: 'Venerable Dreadnought',
+          pricing: [
+            {
+              range: '[1,2]',
+              label: 'Your 1st To 2nd Units Cost',
+              costs: [{ models: 1, points: 130 }],
+            },
+            { range: '[3,)', label: 'Your 3rd + Unit Costs', costs: [{ models: 1, points: 140 }] },
+          ],
+        },
+        {
+          name: 'Venerable Dreadnought',
+          pricing: [
+            { range: '[1,)', label: 'Your Unit Costs', costs: [{ models: 1, points: 165 }] },
+          ],
+        },
+      ],
+    };
+    expect(changelog([faction], [structuredClone(faction)])).toBe('No changes detected.\n');
+  });
+
   it('reports a points change with a signed, magnitude-sorted delta', () => {
     const before = necronsContent();
     const after = structuredClone(before);

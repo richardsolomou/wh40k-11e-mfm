@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { argv } from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { factionFromYaml, metaFromYaml } from './emit.js';
+import { contentKey, factionFromYaml, metaFromYaml } from './emit.js';
 import type { CostOption, Faction, FactionContent, PricingTier, Unit } from './model.js';
 
 /**
@@ -289,6 +289,7 @@ const emptyDiff = (): NumericDiff => ({ deltas: [], added: [], removed: [] });
 
 /** Diff a faction present in both snapshots; `null` if nothing changed. */
 function computeChanges(before: FactionContent, after: FactionContent): FactionChanges | null {
+  if (contentKey(before) === contentKey(after)) return null;
   const head: string[] = [];
   if (before.version !== after.version) head.push(`v${before.version} → v${after.version}`);
   if (before.parent !== after.parent)
