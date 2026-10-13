@@ -4,6 +4,7 @@ Goal: surface what changed whenever Games Workshop updates the MFM, with a clean
 audit trail. Implemented by [`src/diff.ts`](../src/diff.ts) plus git itself.
 
 ## How it works
+
 1. The committed `data/*.yaml` is the **previous** snapshot.
 2. The scrape overwrites `data/` with the **current** snapshot.
 3. `git diff data/` is the canonical, line-level change history (deterministic YAML
@@ -12,7 +13,7 @@ audit trail. Implemented by [`src/diff.ts`](../src/diff.ts) plus git itself.
    (old copy vs. freshly scraped). YAML git diffs bury the signal in long lists, so the
    changelog is built to be scannable:
    - a **title** naming the MFM version and the days it covers — `MFM v1.3 update —
-     2026-08-26`, see *Naming an update* below — used verbatim as the `# ` heading, the
+     2026-08-26`, see *Naming an update* below — used verbatim as the `#` heading, the
      PR title and the commit subject, so a merged update is identifiable from `git log`
      alone;
    - a **summary line** of totals (factions changed, new/removed, unit & detachment
@@ -53,6 +54,7 @@ audit trail. Implemented by [`src/diff.ts`](../src/diff.ts) plus git itself.
    was losing such a target is not counted as changed.
 
 ### Example from the v1.4 update
+
 Selected lines from the changelog for [PR #42](https://github.com/BSData/wh40k-11e-mfm/pull/42),
 rendered with this format (other changes omitted):
 
@@ -90,6 +92,7 @@ For an order-only change, the two complete lists would instead appear as:
 ```
 
 ### The table must explain every row
+
 The Units and Detachments columns count entities **added (`+`), removed (`-`) and
 changed in place (`~`)**; Points shows the `▲`/`▼` split with the net swing. A routine
 MFM update adds and removes nothing — it reprices, re-tiers and edits — so counting only
@@ -106,6 +109,9 @@ bumped", which is exactly backwards. The per-faction sections keep their own not
 way, so a section read on its own is still true.
 
 ### A re-tiering is a modification, not an add plus a remove
+
+Identical faction content must produce no changes, including repeated unit names. Compare the same canonical content fingerprint used to retain observation dates before deriving changes.
+
 Cost rows are keyed `unit · tier · option`, so when GW changes how a unit is costed —
 adding a requisition threshold, so one tier becomes `1st–2nd` / `3rd+` — every key that
 unit owns is rewritten. Diffed row by row, one unchanged unit becomes a wall of removals
@@ -119,8 +125,10 @@ differ between snapshots the unit is *re-tiered*: it is kept out of the cost-row
 entirely and described in one line instead — the tiers before and after, then every
 option's old price against its new price in each tier, prices in tier order:
 
-    Allarus Custodians — re-tiered 1st+ → 1st–2nd / 3rd+; 2 models: 110 → 110 / 140 ·
-    3 models: 165 → 165 / 195 · 5 models: 275 → 280 / 310 · 6 models: 330 → 340 / 370
+```text
+Allarus Custodians — re-tiered 1st+ → 1st–2nd / 3rd+; 2 models: 110 → 110 / 140 ·
+3 models: 165 → 165 / 195 · 5 models: 275 → 280 / 310 · 6 models: 330 → 340 / 370
+```
 
 Nothing is lost — the genuine 275 → 280 is right there — and the reader is told what
 actually happened. It counts as a **changed** unit in the tallies, in its own `Unit
@@ -130,6 +138,7 @@ untouched by this: v1.3's surviving 25 lines are 24 real new Leman Russ wargear 
 and one real removal.
 
 ### Sub-factions: a shared change is listed once
+
 A sub-faction's page (`parent: Space Marines` — Black Templars, Blood Angels, Dark Angels,
 Deathwatch, Space Wolves) carries the parent's whole roster, so a parent reprice arrives
 once per page. Rendered faction by faction, v1.5's `Intercessor Squad — 10 models: 150 →
@@ -138,6 +147,7 @@ Space Marines line: 73% of a 116,568-character body was that one family.
 
 So the sections are rendered per **family** (a parent and the changed factions naming
 it), with each change listed once:
+
 - a change a sub-faction shares **verbatim** with its parent (same block, same line) is
   listed only under the parent, whose section says so;
 - a change **every** changed sub-faction shares but the parent doesn't — v1.5 gave all
@@ -153,11 +163,13 @@ each of their sections: rendering every subset of a family as its own section wo
 harder to read than the repetition it saves.
 
 ### Folding
+
 Above 50 lines the per-faction detail is wrapped in a `<details>` block, so the title,
 summary and table stay on one screen. A full MFM revision runs to hundreds of bullets;
 the summary is the thing a reviewer reads first, and the detail is one click away.
 
 ### Fitting GitHub's limit
+
 GitHub caps a PR body at **65,536 characters**, and `create-pull-request` enforces it by
 cutting the body off mid-line with nothing but a warning in the run log. v1.5's body was
 116,568 characters: it ended in the middle of Deathwatch, sixteen factions and the closing
@@ -174,6 +186,7 @@ never shortened: it is the version's changelog file (below), which the same PR c
 and the body names.
 
 ## Naming an update
+
 `updateTitle()` names an update `MFM v<version> update — <window>`. The version is the
 site-wide one from `meta.yaml` (`loadVersion()`); failing that, the version most
 factions carry — they move together, but a page can lag a revision behind, so the
@@ -199,6 +212,7 @@ This is pure code — no LLM. An optional LLM polish step could summarise the ch
 into prose later, but is not required.
 
 ## The persistent changelog: one file per MFM version
+
 The PR body is ephemeral and capped; the durable record is **one Markdown file per MFM
 version** under [`changelog/`](../changelog) — `changelog/v1.5.md` — indexed by
 [`DATA-CHANGELOG.md`](../DATA-CHANGELOG.md).
@@ -215,6 +229,7 @@ line, table and per-faction sections (at `###`) as the PR body, sub-faction shar
 included, but never folded or shortened. The PR body is this entry under a size limit.
 
 [`scripts/update-data-changelog.ts`](../scripts/update-data-changelog.ts) writes it:
+
 1. into `changelog/v<version>.md`, just after its `<!-- BEGIN ENTRIES -->` marker —
    creating the file from a short header when the version is new. A version usually
    has one entry; a second arrives only if a later update lands without GW bumping the
@@ -235,11 +250,13 @@ their version's file. The `2026-09-02` schema-change note sits in `v1.4.md`, the
 it was made for.
 
 ## Announcing an update (Discord)
+
 A merged PR and a changelog file are pull media — someone has to go looking. The
 announcement is the push half: one Discord message per MFM update, sent to a channel
 webhook.
 
 ### Everything but the GitHub calls lives in `src/discord.ts`
+
 No third-party "post to Discord" action: they take *their* inputs (a content string, a
 title, a colour) rather than a payload, so one would mean fighting a schema and pinning a
 supply-chain dependency in order to render something worse. The hard part — turning two
@@ -259,6 +276,7 @@ The workflow keeps only what is genuinely GitHub's: read the marker off the PR, 
 CLI, record a new marker. Roughly ten lines, no branching.
 
 ### One message per update, edited as the update grows
+
 The announcement fires when the scrape **detects** the change, not when the PR is
 merged — the channel hears about an update the day it lands, not whenever a human gets
 round to the review. That puts it on the wrong side of the sticky PR: `mfm/auto-update`
@@ -300,6 +318,7 @@ An edit that fails because the message is gone (deleted in Discord, or a stale i
 back to posting a new one rather than dropping the announcement.
 
 ### What the message says
+
 `announcement()` renders the same `collectChanges()` diff the other renderers use, as a
 single Discord embed: the update title, the summary totals, then **every faction that
 moved with the number of units and detachments that moved in it**, busiest first, and the
@@ -324,12 +343,14 @@ enforced by the renderer, which trims the faction lists rather than letting the 
 reject a whole update.
 
 ### Failure is not scrape failure
+
 The announce step is `continue-on-error` and no-ops when `DISCORD_WEBHOOK_URL` is unset.
 A Discord outage must not fail the scrape job, because that job's `if: failure()` handler
 opens a *"scrape failed — the source markup may have drifted"* issue, which would be a
 lie. Secret-less runs (forks) simply skip it.
 
 ## Failure reporting
+
 On a parse failure the scrape exits non-zero (no PR) and opens an issue. `src/cli.ts`
 collects each faction's located error and, with `--report <path>`, writes
 `failuresReport()` (from `src/diff.ts`) — a Markdown block per failed faction with the
@@ -338,7 +359,9 @@ workflow folds that file into the issue body, so the issue says *which* factions
 and *why*, not just that something did.
 
 ## Workflow integration
+
 The scrape GitHub Action:
+
 1. snapshots the committed `data/` to a temp dir,
 2. exports the open update PR's `data/` (if there is one) to a second temp dir,
 3. runs `pnpm scrape --report /tmp/failures.md --dates-from <pr-data>`, then copies the
